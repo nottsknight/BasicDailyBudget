@@ -1,5 +1,5 @@
 <resources>
-    <string name="appName">BasicDailyBudget</string>
+    <string name="appName">Basic Daily Budget</string>
     <string name="dailySpendLabel">Your daily budget today is</string>
     <string name="nextPaydayLabel">Your next payday is</string>
     <string name="whenNextPayday">When is your next payday?</string>
