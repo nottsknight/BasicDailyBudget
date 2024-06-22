@@ -17,6 +17,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.createGraph
 import uk.nottsknight.basicdailybudget.ui.SummaryScreen
+import uk.nottsknight.basicdailybudget.ui.UpdateScreen
 import uk.nottsknight.basicdailybudget.ui.theme.BasicDailyBudgetTheme
 
 class MainActivity : ComponentActivity() {
@@ -36,6 +37,7 @@ class MainActivity : ComponentActivity() {
 }
 
 private const val PATH_SUMMARY_SCREEN = "summary"
+private const val PATH_UPDATE_SCREEN = "update"
 
 @Composable
 fun BdbContent(navHostController: NavHostController, innerPadding: PaddingValues) {
@@ -43,7 +45,15 @@ fun BdbContent(navHostController: NavHostController, innerPadding: PaddingValues
         NavHost(
             navController = navHostController,
             graph = navHostController.createGraph(PATH_SUMMARY_SCREEN) {
-                composable(PATH_SUMMARY_SCREEN) { SummaryScreen() }
+                composable(PATH_SUMMARY_SCREEN) {
+                    SummaryScreen(onNavToUpdate = {
+                        navHostController.navigate(PATH_UPDATE_SCREEN)
+                    })
+                }
+
+                composable(PATH_UPDATE_SCREEN) {
+                    UpdateScreen(onNavToSummary = { navHostController.navigate(PATH_SUMMARY_SCREEN) })
+                }
             })
     }
 }

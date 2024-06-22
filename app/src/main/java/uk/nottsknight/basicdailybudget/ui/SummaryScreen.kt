@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.material3.Button
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -32,7 +33,10 @@ import java.time.Instant
 import java.util.Date
 
 @Composable
-fun SummaryScreen(viewModel: SummaryScreenViewModel = viewModel(factory = SummaryScreenViewModel.Factory)) {
+fun SummaryScreen(
+    viewModel: SummaryScreenViewModel = viewModel(factory = SummaryScreenViewModel.Factory),
+    onNavToUpdate: () -> Unit
+) {
     val dailySpend = viewModel.dailySpend.collectAsState()
     val spendFormatter = DecimalFormat.getCurrencyInstance()
 
@@ -53,6 +57,12 @@ fun SummaryScreen(viewModel: SummaryScreenViewModel = viewModel(factory = Summar
 
         Text(stringResource(R.string.nextPaydayLabel))
         Text(paydayFormatter.format(Date.from(nextPayday.value)))
+
+        Spacer(modifier = Modifier.size(32.dp))
+        
+        Button(onClick = onNavToUpdate) {
+            Text(stringResource(R.string.updateAccountBtn))
+        }
     }
 }
 
