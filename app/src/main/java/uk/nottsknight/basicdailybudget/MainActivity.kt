@@ -24,14 +24,14 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.createGraph
 import uk.nottsknight.basicdailybudget.ui.SummaryScreen
 import uk.nottsknight.basicdailybudget.ui.UpdateScreen
-import uk.nottsknight.basicdailybudget.ui.theme.BasicDailyBudgetTheme
+import uk.nottsknight.basicdailybudget.ui.theme.AppTheme
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
-            BasicDailyBudgetTheme {
+            AppTheme {
                 val navController = rememberNavController()
 
                 Scaffold(
