@@ -5,4 +5,6 @@
     <string name="whenNextPayday">When is your next payday?</string>
     <string name="updateBtn">Update</string>
     <string name="updateAccountBtn">Update account</string>
+    <string name="okBtn">OK</string>
+    <string name="cancelBtn">Cancel</string>
 </resources>
