@@ -4,11 +4,17 @@ import android.app.Application
 import android.icu.text.DateFormat
 import android.icu.text.DecimalFormat
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider.AndroidViewModelFactory.Companion.APPLICATION_KEY
 import androidx.lifecycle.viewModelScope
@@ -23,6 +29,7 @@ import uk.nottsknight.basicdailybudget.R
 import uk.nottsknight.basicdailybudget.model.AccountRepository
 import uk.nottsknight.basicdailybudget.model.BdbDatabase
 import java.time.Instant
+import java.util.Date
 
 @Composable
 fun SummaryScreen(viewModel: SummaryScreenViewModel = viewModel(factory = SummaryScreenViewModel.Factory)) {
@@ -30,14 +37,22 @@ fun SummaryScreen(viewModel: SummaryScreenViewModel = viewModel(factory = Summar
     val spendFormatter = DecimalFormat.getCurrencyInstance()
 
     val nextPayday = viewModel.nextPayday.collectAsState()
-    val paydayFormatter = DateFormat.getInstance()
+    val paydayFormatter = DateFormat.getDateInstance(DateFormat.MEDIUM)
 
-    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(32.dp)
+    ) {
+
         Text(stringResource(R.string.dailySpendLabel))
         Text(spendFormatter.format(dailySpend.value / 100f))
 
+        Spacer(modifier = Modifier.size(32.dp))
+
         Text(stringResource(R.string.nextPaydayLabel))
-        Text(paydayFormatter.format(nextPayday.value))
+        Text(paydayFormatter.format(Date.from(nextPayday.value)))
     }
 }
 
