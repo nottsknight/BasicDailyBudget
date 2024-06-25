@@ -54,8 +54,6 @@ fun SummaryScreen(viewModel: SummaryScreenViewModel = viewModel(factory = Summar
 
         Text(stringResource(R.string.nextPaydayLabel))
         Text(paydayFormatter.format(Date.from(nextPayday.value)))
-
-        Spacer(modifier = Modifier.size(32.dp))
     }
 }
 

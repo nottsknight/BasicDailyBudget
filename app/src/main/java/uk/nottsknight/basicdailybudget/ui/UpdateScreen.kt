@@ -9,17 +9,18 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.DateRange
+import androidx.compose.material.icons.filled.Today
 import androidx.compose.material3.Button
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
-import androidx.compose.material3.DisplayMode
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.TextField
 import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -29,6 +30,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider.AndroidViewModelFactory.Companion.APPLICATION_KEY
@@ -42,6 +44,7 @@ import uk.nottsknight.basicdailybudget.R
 import uk.nottsknight.basicdailybudget.model.AccountRepository
 import uk.nottsknight.basicdailybudget.model.BdbDatabase
 import java.time.Instant
+import java.time.temporal.ChronoUnit
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -49,15 +52,32 @@ fun UpdateScreen(viewModel: UpdateScreenViewModel = viewModel(factory = UpdateSc
 
     var showDialog by remember { mutableStateOf(false) }
     val chosenDate = rememberDatePickerState(
-        initialSelectedDateMillis = Instant.now().toEpochMilli(),
-        initialDisplayMode = DisplayMode.Input
+        initialSelectedDateMillis = Instant.now().toEpochMilli()
     )
+    var dateChanged by remember { mutableStateOf(false) }
+    var newBalance by remember { mutableStateOf("0.00") }
+    var balanceChanged by remember { mutableStateOf(false) }
 
     Column(
         modifier = Modifier
             .fillMaxWidth()
             .padding(32.dp)
     ) {
+
+        Text(stringResource(R.string.currentBalance))
+        Spacer(modifier = Modifier.height(16.dp))
+        TextField(
+            value = newBalance,
+            onValueChange = { value ->
+                newBalance = value.trimStart('0').trim { !it.isDigit() }
+                balanceChanged = true
+            },
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+            visualTransformation = CurrencyVisualTransformation(),
+            modifier = Modifier.align(Alignment.CenterHorizontally)
+        )
+
+        Spacer(modifier = Modifier.size(32.dp))
 
         Text(stringResource(R.string.whenNextPayday))
         Spacer(modifier = Modifier.height(16.dp))
@@ -66,7 +86,7 @@ fun UpdateScreen(viewModel: UpdateScreenViewModel = viewModel(factory = UpdateSc
             modifier = Modifier.align(Alignment.CenterHorizontally)
         ) {
 
-            Icon(imageVector = Icons.Default.DateRange, contentDescription = "Choose payday")
+            Icon(imageVector = Icons.Default.Today, contentDescription = "Choose payday")
             Spacer(modifier = Modifier.width(8.dp))
             Text(
                 DateFormat.getDateInstance(DateFormat.MEDIUM).format(chosenDate.selectedDateMillis)
@@ -77,7 +97,7 @@ fun UpdateScreen(viewModel: UpdateScreenViewModel = viewModel(factory = UpdateSc
             DatePickerDialog(
                 onDismissRequest = { showDialog = false },
                 confirmButton = {
-                    Button(onClick = { showDialog = false }) {
+                    Button(onClick = { showDialog = false; dateChanged = true }) {
                         Text(stringResource(R.string.okBtn))
                     }
                 },
@@ -95,11 +115,18 @@ fun UpdateScreen(viewModel: UpdateScreenViewModel = viewModel(factory = UpdateSc
 
         Button(
             onClick = {
-                if (chosenDate.selectedDateMillis != null) {
+                if (dateChanged && chosenDate.selectedDateMillis != null) {
                     viewModel.updatePayday(chosenDate.selectedDateMillis!!)
                 }
+                dateChanged = false
+
+                if (balanceChanged) {
+                    viewModel.updateBalance(newBalance)
+                }
+                balanceChanged = false
             },
-            modifier = Modifier.align(Alignment.CenterHorizontally)
+            modifier = Modifier.align(Alignment.CenterHorizontally),
+            enabled = dateChanged && balanceChanged
         ) {
             Text(stringResource(R.string.updateBtn))
         }
@@ -110,6 +137,15 @@ class UpdateScreenViewModel(private val accountRepo: AccountRepository) : ViewMo
     fun updatePayday(date: Long) = viewModelScope.launch {
         val account = accountRepo.select(0) ?: return@launch
         val account1 = account.copy(nextPayday = Instant.ofEpochMilli(date))
+        accountRepo.update(account1)
+    }
+
+    fun updateBalance(balance: String) = viewModelScope.launch {
+        val balanceValue = balance.toDouble() * 100
+        val account = accountRepo.select(0) ?: return@launch
+
+        val daysToPayday = ChronoUnit.DAYS.between(Instant.now(), account.nextPayday)
+        val account1 = account.copy(dailyAllowance = (balanceValue / daysToPayday).toInt())
         accountRepo.update(account1)
     }
 

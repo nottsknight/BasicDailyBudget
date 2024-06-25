@@ -2,9 +2,12 @@
     <string name="appName">Basic Daily Budget</string>
     <string name="dailySpendLabel">Your daily budget today is</string>
     <string name="nextPaydayLabel">Your next payday is</string>
+    <string name="currentBalance">What is your current balance?</string>
     <string name="whenNextPayday">When is your next payday?</string>
     <string name="updateBtn">Update</string>
     <string name="updateAccountBtn">Update account</string>
     <string name="okBtn">OK</string>
     <string name="cancelBtn">Cancel</string>
+    <string name="summaryTabLbl">Summary</string>
+    <string name="incomeTabLbl">Income</string>
 </resources>

@@ -71,11 +71,11 @@ fun BdbContent(navHostController: NavHostController, innerPadding: PaddingValues
             PrimaryTabRow(selectedTabIndex = selectedIndex) {
                 Tab(selected = selectedIndex == 0,
                     onClick = { selectedIndex = 0 },
-                    text = { Text("Summary") })
+                    text = { Text(stringResource(R.string.summaryTabLbl)) })
 
                 Tab(selected = selectedIndex == 1,
                     onClick = { selectedIndex = 1 },
-                    text = { Text("Income") })
+                    text = { Text(stringResource(R.string.incomeTabLbl)) })
             }
 
             when (selectedIndex) {
@@ -83,18 +83,5 @@ fun BdbContent(navHostController: NavHostController, innerPadding: PaddingValues
                 1 -> UpdateScreen()
             }
         }
-//        NavHost(
-//            navController = navHostController,
-//            graph = navHostController.createGraph(PATH_SUMMARY_SCREEN) {
-//                composable(PATH_SUMMARY_SCREEN) {
-//                    SummaryScreen(onNavToUpdate = {
-//                        navHostController.navigate(PATH_UPDATE_SCREEN)
-//                    })
-//                }
-//
-//                composable(PATH_UPDATE_SCREEN) {
-//                    UpdateScreen(onNavToSummary = { navHostController.navigate(PATH_SUMMARY_SCREEN) })
-//                }
-//            })
     }
 }
