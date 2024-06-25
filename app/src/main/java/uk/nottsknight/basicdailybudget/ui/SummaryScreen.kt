@@ -33,10 +33,7 @@ import java.time.Instant
 import java.util.Date
 
 @Composable
-fun SummaryScreen(
-    viewModel: SummaryScreenViewModel = viewModel(factory = SummaryScreenViewModel.Factory),
-    onNavToUpdate: () -> Unit
-) {
+fun SummaryScreen(viewModel: SummaryScreenViewModel = viewModel(factory = SummaryScreenViewModel.Factory)) {
     val dailySpend = viewModel.dailySpend.collectAsState()
     val spendFormatter = DecimalFormat.getCurrencyInstance()
 
@@ -59,10 +56,6 @@ fun SummaryScreen(
         Text(paydayFormatter.format(Date.from(nextPayday.value)))
 
         Spacer(modifier = Modifier.size(32.dp))
-        
-        Button(onClick = onNavToUpdate) {
-            Text(stringResource(R.string.updateAccountBtn))
-        }
     }
 }
 

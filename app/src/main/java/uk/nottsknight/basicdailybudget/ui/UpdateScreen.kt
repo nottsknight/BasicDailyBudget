@@ -45,10 +45,7 @@ import java.time.Instant
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun UpdateScreen(
-    viewModel: UpdateScreenViewModel = viewModel(factory = UpdateScreenViewModel.Factory),
-    onNavToSummary: () -> Unit
-) {
+fun UpdateScreen(viewModel: UpdateScreenViewModel = viewModel(factory = UpdateScreenViewModel.Factory)) {
 
     var showDialog by remember { mutableStateOf(false) }
     val chosenDate = rememberDatePickerState(
@@ -101,7 +98,6 @@ fun UpdateScreen(
                 if (chosenDate.selectedDateMillis != null) {
                     viewModel.updatePayday(chosenDate.selectedDateMillis!!)
                 }
-                onNavToSummary()
             },
             modifier = Modifier.align(Alignment.CenterHorizontally)
         ) {
