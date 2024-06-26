@@ -2,6 +2,7 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.jetbrains.kotlin.android)
     alias(libs.plugins.google.devtools.ksp)
+    alias(libs.plugins.androidx.room)
 }
 
 android {
@@ -42,6 +43,12 @@ android {
     }
     composeOptions {
         kotlinCompilerExtensionVersion = "1.5.14"
+    }
+    room {
+        schemaDirectory("$projectDir/schemas")
+    }
+    ksp {
+        arg("room.generateKotlin", "true")
     }
     packaging {
         resources {
