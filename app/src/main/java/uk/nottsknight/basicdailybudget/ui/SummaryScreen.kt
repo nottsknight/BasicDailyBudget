@@ -24,7 +24,6 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -51,10 +50,13 @@ import kotlinx.coroutines.launch
 import uk.nottsknight.basicdailybudget.R
 import uk.nottsknight.basicdailybudget.model.AccountRepository
 import uk.nottsknight.basicdailybudget.model.BdbDatabase
+import uk.nottsknight.basicdailybudget.model.PreferencesRepository
 import uk.nottsknight.basicdailybudget.model.Spend
 import uk.nottsknight.basicdailybudget.model.SpendRepository
+import uk.nottsknight.basicdailybudget.preferences
 import java.time.Instant
 import java.util.Date
+import kotlin.properties.Delegates
 
 @Composable
 fun SummaryScreen(viewModel: SummaryScreenViewModel = viewModel(factory = SummaryScreenViewModel.Factory)) {
@@ -173,31 +175,39 @@ private fun SpendDialog(onDismiss: () -> Unit, onConfirm: (String) -> Unit) {
 
 class SummaryScreenViewModel(
     private val accountRepo: AccountRepository,
-    private val spendRepo: SpendRepository
+    private val spendRepo: SpendRepository,
+    private val prefsRepo: PreferencesRepository
 ) : ViewModel() {
 
     private val dailySpendState = MutableStateFlow(0)
     private val nextPaydayState = MutableStateFlow(Instant.now())
     private val transactionList = MutableStateFlow(listOf<Spend>())
+    private var currentAccountId by Delegates.notNull<Int>()
 
     val dailySpend: StateFlow<Int> get() = dailySpendState
     val nextPayday: StateFlow<Instant> get() = nextPaydayState
     val transactions: StateFlow<List<Spend>> get() = transactionList
 
     init {
-        getModelValues()
+        viewModelScope.launch {
+            prefsRepo.currentAccountId.collect { id ->
+                currentAccountId = id
+                getModelValues()
+            }
+        }
     }
 
     private fun getModelValues() = viewModelScope.launch {
-        val account = accountRepo.select(0) ?: return@launch
+        val account = accountRepo.select(currentAccountId) ?: return@launch
         dailySpendState.value = account.dailyAllowance
         nextPaydayState.value = account.nextPayday
-        transactionList.value = spendRepo.getAllByAccount(0)
+        transactionList.value = spendRepo.getAllByAccount(currentAccountId)
     }
 
     fun addTransaction(amount: Int) = viewModelScope.launch {
-        val spend = Spend(0, 0, Instant.now(), amount, "")
+        val spend = Spend(0, currentAccountId, Instant.now(), amount, "")
         spendRepo.insert(spend)
+        transactionList.value = spendRepo.getAllByAccount(currentAccountId)
     }
 
     companion object {
@@ -207,7 +217,8 @@ class SummaryScreenViewModel(
                 val db = Room.databaseBuilder(context, BdbDatabase::class.java, "bdb").build()
                 val accountRepo = AccountRepository(db.accounts())
                 val spendRepo = SpendRepository(db.spends())
-                SummaryScreenViewModel(accountRepo, spendRepo)
+                val prefsRepo = PreferencesRepository(context.preferences)
+                SummaryScreenViewModel(accountRepo, spendRepo, prefsRepo)
             }
         }
     }

@@ -1,5 +1,6 @@
 package uk.nottsknight.basicdailybudget
 
+import android.content.Context
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -24,11 +25,16 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.datastore.core.DataStore
+import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.preferencesDataStore
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
 import uk.nottsknight.basicdailybudget.ui.SummaryScreen
 import uk.nottsknight.basicdailybudget.ui.UpdateScreen
 import uk.nottsknight.basicdailybudget.ui.theme.AppTheme
+
+val Context.preferences: DataStore<Preferences> by preferencesDataStore(name = "bdb_prefs")
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {

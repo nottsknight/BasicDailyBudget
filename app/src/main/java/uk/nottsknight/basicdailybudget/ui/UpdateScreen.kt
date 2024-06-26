@@ -43,8 +43,11 @@ import kotlinx.coroutines.launch
 import uk.nottsknight.basicdailybudget.R
 import uk.nottsknight.basicdailybudget.model.AccountRepository
 import uk.nottsknight.basicdailybudget.model.BdbDatabase
+import uk.nottsknight.basicdailybudget.model.PreferencesRepository
+import uk.nottsknight.basicdailybudget.preferences
 import java.time.Instant
 import java.time.temporal.ChronoUnit
+import kotlin.properties.Delegates
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -133,16 +136,30 @@ fun UpdateScreen(viewModel: UpdateScreenViewModel = viewModel(factory = UpdateSc
     }
 }
 
-class UpdateScreenViewModel(private val accountRepo: AccountRepository) : ViewModel() {
+class UpdateScreenViewModel(
+    private val accountRepo: AccountRepository,
+    private val prefsRepo: PreferencesRepository
+) : ViewModel() {
+
+    init {
+        viewModelScope.launch {
+            prefsRepo.currentAccountId.collect {
+                currentAccountId = it
+            }
+        }
+    }
+
+    private var currentAccountId by Delegates.notNull<Int>()
+
     fun updatePayday(date: Long) = viewModelScope.launch {
-        val account = accountRepo.select(0) ?: return@launch
+        val account = accountRepo.select(currentAccountId) ?: return@launch
         val account1 = account.copy(nextPayday = Instant.ofEpochMilli(date))
         accountRepo.update(account1)
     }
 
     fun updateBalance(balance: String) = viewModelScope.launch {
         val balanceValue = balance.toDouble() * 100
-        val account = accountRepo.select(0) ?: return@launch
+        val account = accountRepo.select(currentAccountId) ?: return@launch
 
         val daysToPayday = ChronoUnit.DAYS.between(Instant.now(), account.nextPayday)
         val account1 = account.copy(dailyAllowance = (balanceValue / daysToPayday).toInt())
@@ -155,7 +172,8 @@ class UpdateScreenViewModel(private val accountRepo: AccountRepository) : ViewMo
                 val context = (this[APPLICATION_KEY] as Application).applicationContext
                 val db = Room.databaseBuilder(context, BdbDatabase::class.java, "bdb").build()
                 val accountRepo = AccountRepository(db.accounts())
-                UpdateScreenViewModel(accountRepo)
+                val prefsRepo = PreferencesRepository(context.preferences)
+                UpdateScreenViewModel(accountRepo, prefsRepo)
             }
         }
     }
