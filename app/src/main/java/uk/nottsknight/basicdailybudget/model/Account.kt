@@ -2,10 +2,13 @@ package uk.nottsknight.basicdailybudget.model
 
 import androidx.room.Dao
 import androidx.room.Delete
+import androidx.room.Embedded
 import androidx.room.Entity
 import androidx.room.Insert
 import androidx.room.PrimaryKey
 import androidx.room.Query
+import androidx.room.Relation
+import androidx.room.Transaction
 import androidx.room.Update
 import java.time.Instant
 
@@ -16,10 +19,20 @@ data class Account(
     val nextPayday: Instant
 )
 
+data class AccountWithSpends(
+    @Embedded val account: Account,
+    @Relation(parentColumn = "id", entityColumn = "accountId")
+    val spends: List<Spend>
+)
+
 @Dao
 interface AccountLocalDataStore {
     @Query("SELECT * FROM Account WHERE id = :id")
     suspend fun selectById(id: Int): Account?
+
+    @Transaction
+    @Query("SELECT * FROM Account WHERE id = :id")
+    suspend fun selectWithSpends(id: Int): AccountWithSpends?
 
     @Insert
     suspend fun insert(account: Account)

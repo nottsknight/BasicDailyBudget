@@ -6,10 +6,11 @@ import androidx.room.TypeConverter
 import androidx.room.TypeConverters
 import java.time.Instant
 
-@Database(entities = [Account::class], version = 1)
+@Database(entities = [Account::class, Spend::class], version = 2)
 @TypeConverters(Converters::class)
 abstract class BdbDatabase : RoomDatabase() {
     abstract fun accounts(): AccountLocalDataStore
+    abstract fun spends(): SpendLocalDataStore
 }
 
 class Converters {
