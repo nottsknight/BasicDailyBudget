@@ -11,7 +11,7 @@ import java.time.Instant
 
 @Entity
 data class Spend(
-    @PrimaryKey val id: Int,
+    @PrimaryKey(autoGenerate = true) val id: Int,
     val accountId: Int,
     val date: Instant,
     val amount: Int,
@@ -38,4 +38,5 @@ interface SpendLocalDataStore {
 
 class SpendRepository(private val localData: SpendLocalDataStore) {
     suspend fun getAllByAccount(accountId: Int) = localData.selectAllByAccountId(accountId)
+    suspend fun insert(spend: Spend) = localData.insert(spend)
 }

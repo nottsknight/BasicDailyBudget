@@ -14,7 +14,7 @@ import java.time.Instant
 
 @Entity
 data class Account(
-    @PrimaryKey val id: Int,
+    @PrimaryKey(autoGenerate = true) val id: Int,
     val dailyAllowance: Int,
     val nextPayday: Instant
 )

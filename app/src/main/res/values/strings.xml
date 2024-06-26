@@ -10,4 +10,7 @@
     <string name="cancelBtn">Cancel</string>
     <string name="summaryTabLbl">Summary</string>
     <string name="incomeTabLbl">Income</string>
+    <string name="noTransactions">No transactions yet</string>
+    <string name="addTransBtn">Add transaction</string>
+    <string name="howMuchSpend">How much did you spend?</string>
 </resources>
