@@ -129,7 +129,7 @@ fun UpdateScreen(viewModel: UpdateScreenViewModel = viewModel(factory = UpdateSc
                 balanceChanged = false
             },
             modifier = Modifier.align(Alignment.CenterHorizontally),
-            enabled = dateChanged && balanceChanged
+            enabled = dateChanged || balanceChanged
         ) {
             Text(stringResource(R.string.updateBtn))
         }
