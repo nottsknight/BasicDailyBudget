@@ -23,6 +23,7 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
@@ -59,7 +60,11 @@ import java.util.Date
 import kotlin.properties.Delegates
 
 @Composable
-fun SummaryScreen(viewModel: SummaryScreenViewModel = viewModel(factory = SummaryScreenViewModel.Factory)) {
+fun SummaryScreen(
+    snackHost: SnackbarHostState,
+    viewModel: SummaryScreenViewModel = viewModel(factory = SummaryScreenViewModel.Factory(snackHost))
+) {
+
     val dailySpend = viewModel.dailySpend.collectAsState()
     val spendFormatter = DecimalFormat.getCurrencyInstance()
 
@@ -176,7 +181,8 @@ private fun SpendDialog(onDismiss: () -> Unit, onConfirm: (String) -> Unit) {
 class SummaryScreenViewModel(
     private val accountRepo: AccountRepository,
     private val spendRepo: SpendRepository,
-    private val prefsRepo: PreferencesRepository
+    private val prefsRepo: PreferencesRepository,
+    private val snackHost: SnackbarHostState
 ) : ViewModel() {
 
     private val dailySpendState = MutableStateFlow(0)
@@ -198,7 +204,9 @@ class SummaryScreenViewModel(
     }
 
     private fun getModelValues() = viewModelScope.launch {
-        val account = accountRepo.select(currentAccountId) ?: return@launch
+        val account = accountRepo.select(currentAccountId)
+            ?: snackHost.showSnackbar("Failed to get active account").let { return@launch }
+
         dailySpendState.value = account.dailyAllowance
         nextPaydayState.value = account.nextPayday
         transactionList.value = spendRepo.getAllByAccount(currentAccountId)
@@ -211,14 +219,14 @@ class SummaryScreenViewModel(
     }
 
     companion object {
-        val Factory = viewModelFactory {
+        fun Factory(snackHost: SnackbarHostState) = viewModelFactory {
             initializer {
                 val context = (this[APPLICATION_KEY] as Application).applicationContext
                 val db = Room.databaseBuilder(context, BdbDatabase::class.java, "bdb").build()
                 val accountRepo = AccountRepository(db.accounts())
                 val spendRepo = SpendRepository(db.spends())
                 val prefsRepo = PreferencesRepository(context.preferences)
-                SummaryScreenViewModel(accountRepo, spendRepo, prefsRepo)
+                SummaryScreenViewModel(accountRepo, spendRepo, prefsRepo, snackHost)
             }
         }
     }

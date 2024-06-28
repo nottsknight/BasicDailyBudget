@@ -13,6 +13,8 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.PrimaryTabRow
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Tab
 import androidx.compose.material3.Text
@@ -28,7 +30,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.preferencesDataStore
-import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
 import uk.nottsknight.basicdailybudget.ui.SummaryScreen
 import uk.nottsknight.basicdailybudget.ui.UpdateScreen
@@ -42,20 +43,18 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             AppTheme {
-                val navController = rememberNavController()
+                val snackHostState = remember { SnackbarHostState() }
 
                 Scaffold(
-                    topBar = { BdbAppBar() }, modifier = Modifier.fillMaxSize()
+                    topBar = { BdbAppBar() }, modifier = Modifier.fillMaxSize(),
+                    snackbarHost = { SnackbarHost(hostState = snackHostState) }
                 ) { innerPadding ->
-                    BdbContent(navHostController = navController, innerPadding = innerPadding)
+                    BdbContent(snackHost = snackHostState, innerPadding = innerPadding)
                 }
             }
         }
     }
 }
-
-private const val PATH_SUMMARY_SCREEN = "summary"
-private const val PATH_UPDATE_SCREEN = "update"
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -69,7 +68,7 @@ fun BdbAppBar() = TopAppBar(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun BdbContent(navHostController: NavHostController, innerPadding: PaddingValues) {
+fun BdbContent(snackHost: SnackbarHostState, innerPadding: PaddingValues) {
     var selectedIndex by remember { mutableIntStateOf(0) }
 
     Surface(modifier = Modifier.padding(innerPadding)) {
@@ -85,8 +84,8 @@ fun BdbContent(navHostController: NavHostController, innerPadding: PaddingValues
             }
 
             when (selectedIndex) {
-                0 -> SummaryScreen()
-                1 -> UpdateScreen()
+                0 -> SummaryScreen(snackHost)
+                1 -> UpdateScreen(snackHost)
             }
         }
     }

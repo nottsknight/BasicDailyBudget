@@ -13,4 +13,5 @@
     <string name="noTransactions">No transactions yet</string>
     <string name="addTransBtn">Add transaction</string>
     <string name="howMuchSpend">How much did you spend?</string>
+    <string name="accountError">Failed to get active account</string>
 </resources>

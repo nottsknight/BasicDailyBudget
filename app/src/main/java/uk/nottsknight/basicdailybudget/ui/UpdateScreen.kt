@@ -18,6 +18,7 @@ import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextField
@@ -51,7 +52,10 @@ import kotlin.properties.Delegates
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun UpdateScreen(viewModel: UpdateScreenViewModel = viewModel(factory = UpdateScreenViewModel.Factory)) {
+fun UpdateScreen(
+    snackHost: SnackbarHostState,
+    viewModel: UpdateScreenViewModel = viewModel(factory = UpdateScreenViewModel.Factory(snackHost))
+) {
 
     var showDialog by remember { mutableStateOf(false) }
     val chosenDate = rememberDatePickerState(
@@ -138,7 +142,8 @@ fun UpdateScreen(viewModel: UpdateScreenViewModel = viewModel(factory = UpdateSc
 
 class UpdateScreenViewModel(
     private val accountRepo: AccountRepository,
-    private val prefsRepo: PreferencesRepository
+    private val prefsRepo: PreferencesRepository,
+    private val snackHost: SnackbarHostState
 ) : ViewModel() {
 
     init {
@@ -152,14 +157,16 @@ class UpdateScreenViewModel(
     private var currentAccountId by Delegates.notNull<Int>()
 
     fun updatePayday(date: Long) = viewModelScope.launch {
-        val account = accountRepo.select(currentAccountId) ?: return@launch
+        val account = accountRepo.select(currentAccountId)
+            ?: snackHost.showSnackbar("Failed to get active account").let { return@launch }
         val account1 = account.copy(nextPayday = Instant.ofEpochMilli(date))
         accountRepo.update(account1)
     }
 
     fun updateBalance(balance: String) = viewModelScope.launch {
         val balanceValue = balance.toDouble() * 100
-        val account = accountRepo.select(currentAccountId) ?: return@launch
+        val account = accountRepo.select(currentAccountId)
+            ?: snackHost.showSnackbar("Failed to get active account").let { return@launch }
 
         val daysToPayday = ChronoUnit.DAYS.between(Instant.now(), account.nextPayday)
         val account1 = account.copy(dailyAllowance = (balanceValue / daysToPayday).toInt())
@@ -167,13 +174,13 @@ class UpdateScreenViewModel(
     }
 
     companion object {
-        val Factory = viewModelFactory {
+        fun Factory(snackHost: SnackbarHostState) = viewModelFactory {
             initializer {
                 val context = (this[APPLICATION_KEY] as Application).applicationContext
                 val db = Room.databaseBuilder(context, BdbDatabase::class.java, "bdb").build()
                 val accountRepo = AccountRepository(db.accounts())
                 val prefsRepo = PreferencesRepository(context.preferences)
-                UpdateScreenViewModel(accountRepo, prefsRepo)
+                UpdateScreenViewModel(accountRepo, prefsRepo, snackHost)
             }
         }
     }
