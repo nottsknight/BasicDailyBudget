@@ -35,7 +35,7 @@ interface AccountLocalDataStore {
     suspend fun selectWithSpends(id: Int): AccountWithSpends?
 
     @Insert
-    suspend fun insert(account: Account)
+    suspend fun insert(account: Account): Long
 
     @Update
     suspend fun update(account: Account)
@@ -46,7 +46,7 @@ interface AccountLocalDataStore {
 
 class AccountRepository(private val localDataStore: AccountLocalDataStore) {
     suspend fun select(id: Int) = localDataStore.selectById(id)
-    suspend fun insert(account: Account) = localDataStore.insert(account)
+    suspend fun insert(account: Account): Long = localDataStore.insert(account)
     suspend fun update(account: Account) = localDataStore.update(account)
     suspend fun delete(account: Account) = localDataStore.delete(account)
 }

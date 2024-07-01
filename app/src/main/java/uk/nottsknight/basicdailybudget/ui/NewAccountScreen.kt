@@ -23,6 +23,8 @@ import kotlinx.coroutines.launch
 import uk.nottsknight.basicdailybudget.model.Account
 import uk.nottsknight.basicdailybudget.model.AccountRepository
 import uk.nottsknight.basicdailybudget.model.BdbDatabase
+import uk.nottsknight.basicdailybudget.model.PreferencesRepository
+import uk.nottsknight.basicdailybudget.preferences
 import java.time.Instant
 import java.time.temporal.ChronoUnit
 
@@ -57,15 +59,20 @@ fun NewAccountScreen(
     }
 }
 
-class NewAccountViewModel(private val accountRepo: AccountRepository) : ViewModel() {
+class NewAccountViewModel(
+    private val accountRepo: AccountRepository,
+    private val prefsRepo: PreferencesRepository
+) : ViewModel() {
+
     fun createNewAccount(balance: String, payday: Instant) {
-        val balanceInt = balance.toInt()
+        val balanceInt = balance.toDouble()
         val daysRemaining = ChronoUnit.DAYS.between(Instant.now(), payday)
         val dailySpend = balanceInt / daysRemaining
         val account = Account(0, dailySpend.toInt(), payday)
 
         viewModelScope.launch {
-            accountRepo.insert(account)
+            val newId = accountRepo.insert(account)
+            prefsRepo.setCurrentAccountId(newId.toInt())
         }
     }
 
@@ -74,8 +81,9 @@ class NewAccountViewModel(private val accountRepo: AccountRepository) : ViewMode
             initializer {
                 val context = (this[APPLICATION_KEY] as Application).applicationContext
                 val db = Room.databaseBuilder(context, BdbDatabase::class.java, "bdb").build()
-                val repo = AccountRepository(db.accounts())
-                NewAccountViewModel(repo)
+                val accountRepo = AccountRepository(db.accounts())
+                val prefsRepo = PreferencesRepository(context.preferences)
+                NewAccountViewModel(accountRepo, prefsRepo)
             }
         }
     }
