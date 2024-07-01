@@ -18,6 +18,7 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.HorizontalDivider
@@ -25,6 +26,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -57,12 +59,12 @@ import uk.nottsknight.basicdailybudget.model.SpendRepository
 import uk.nottsknight.basicdailybudget.preferences
 import java.time.Instant
 import java.util.Date
-import kotlin.properties.Delegates
 
 @Composable
 fun SummaryScreen(
     snackHost: SnackbarHostState,
-    viewModel: SummaryScreenViewModel = viewModel(factory = SummaryScreenViewModel.Factory(snackHost))
+    viewModel: SummaryScreenViewModel = viewModel(factory = SummaryScreenViewModel.Factory(snackHost)),
+    onNavToNewAccount: () -> Unit,
 ) {
 
     val dailySpend = viewModel.dailySpend.collectAsState()
@@ -72,8 +74,26 @@ fun SummaryScreen(
     val paydayFormatter = DateFormat.getDateInstance(DateFormat.MEDIUM)
 
     val transactions = viewModel.transactions.collectAsState()
+    val currentAccount = viewModel.currentAccount.collectAsState()
 
     var showDialog by remember { mutableStateOf(false) }
+
+    if (currentAccount.value == -1) {
+        AlertDialog(
+            onDismissRequest = { /*TODO*/ },
+            confirmButton = {
+                TextButton(onClick = { onNavToNewAccount() }) {
+                    Text(text = "OK")
+                }
+            },
+            title = { Text(text = "No account") },
+            text = { Text(text = "You haven't created any accounts yet. Create one now?") },
+            dismissButton = {
+                TextButton(onClick = { }) {
+                    Text(text = "Later")
+                }
+            })
+    }
 
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -188,34 +208,35 @@ class SummaryScreenViewModel(
     private val dailySpendState = MutableStateFlow(0)
     private val nextPaydayState = MutableStateFlow(Instant.now())
     private val transactionList = MutableStateFlow(listOf<Spend>())
-    private var currentAccountId by Delegates.notNull<Int>()
+    private val currentAccountId = MutableStateFlow(-1)
 
     val dailySpend: StateFlow<Int> get() = dailySpendState
     val nextPayday: StateFlow<Instant> get() = nextPaydayState
     val transactions: StateFlow<List<Spend>> get() = transactionList
+    val currentAccount: StateFlow<Int> get() = currentAccountId
 
     init {
         viewModelScope.launch {
             prefsRepo.currentAccountId.collect { id ->
-                currentAccountId = id
+                currentAccountId.value = id
                 getModelValues()
             }
         }
     }
 
     private fun getModelValues() = viewModelScope.launch {
-        val account = accountRepo.select(currentAccountId)
+        val account = accountRepo.select(currentAccountId.value)
             ?: snackHost.showSnackbar("Failed to get active account").let { return@launch }
 
         dailySpendState.value = account.dailyAllowance
         nextPaydayState.value = account.nextPayday
-        transactionList.value = spendRepo.getAllByAccount(currentAccountId)
+        transactionList.value = spendRepo.getAllByAccount(currentAccountId.value)
     }
 
     fun addTransaction(amount: Int) = viewModelScope.launch {
-        val spend = Spend(0, currentAccountId, Instant.now(), amount, "")
+        val spend = Spend(0, currentAccountId.value, Instant.now(), amount, "")
         spendRepo.insert(spend)
-        transactionList.value = spendRepo.getAllByAccount(currentAccountId)
+        transactionList.value = spendRepo.getAllByAccount(currentAccountId.value)
     }
 
     companion object {

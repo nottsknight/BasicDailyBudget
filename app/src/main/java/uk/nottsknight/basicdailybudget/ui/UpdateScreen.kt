@@ -9,7 +9,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Today
 import androidx.compose.material3.Button
@@ -21,7 +20,6 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TextField
 import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -31,7 +29,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider.AndroidViewModelFactory.Companion.APPLICATION_KEY
@@ -57,7 +54,6 @@ fun UpdateScreen(
     viewModel: UpdateScreenViewModel = viewModel(factory = UpdateScreenViewModel.Factory(snackHost))
 ) {
 
-    var showDialog by remember { mutableStateOf(false) }
     val chosenDate = rememberDatePickerState(
         initialSelectedDateMillis = Instant.now().toEpochMilli()
     )
@@ -72,51 +68,25 @@ fun UpdateScreen(
     ) {
 
         Text(stringResource(R.string.currentBalance))
+
         Spacer(modifier = Modifier.height(16.dp))
-        TextField(
-            value = newBalance,
-            onValueChange = { value ->
-                newBalance = value.trimStart('0').trim { !it.isDigit() }
-                balanceChanged = true
-            },
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-            visualTransformation = CurrencyVisualTransformation(),
-            modifier = Modifier.align(Alignment.CenterHorizontally)
-        )
+
+        CurrencyTextField(value = newBalance) {
+            newBalance = it
+            balanceChanged = true
+        }
 
         Spacer(modifier = Modifier.size(32.dp))
 
         Text(stringResource(R.string.whenNextPayday))
+
         Spacer(modifier = Modifier.height(16.dp))
-        OutlinedButton(
-            onClick = { showDialog = true },
-            modifier = Modifier.align(Alignment.CenterHorizontally)
-        ) {
 
-            Icon(imageVector = Icons.Default.Today, contentDescription = "Choose payday")
-            Spacer(modifier = Modifier.width(8.dp))
-            Text(
-                DateFormat.getDateInstance(DateFormat.MEDIUM).format(chosenDate.selectedDateMillis)
-            )
-        }
-
-        if (showDialog) {
-            DatePickerDialog(
-                onDismissRequest = { showDialog = false },
-                confirmButton = {
-                    Button(onClick = { showDialog = false; dateChanged = true }) {
-                        Text(stringResource(R.string.okBtn))
-                    }
-                },
-                dismissButton = {
-                    TextButton(onClick = { showDialog = false }) {
-                        Text(stringResource(R.string.cancelBtn))
-                    }
-                }
-            ) {
-                DatePicker(state = chosenDate)
-            }
-        }
+        DateSelector(
+            modifier = Modifier.align(Alignment.CenterHorizontally),
+            state = chosenDate,
+            onConfirm = { dateChanged = true }
+        )
 
         Spacer(modifier = Modifier.size(32.dp))
 

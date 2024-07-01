@@ -30,11 +30,20 @@ import androidx.compose.ui.res.stringResource
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.preferencesDataStore
+import androidx.navigation.NavHostController
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
+import androidx.navigation.createGraph
+import uk.nottsknight.basicdailybudget.ui.NewAccountScreen
 import uk.nottsknight.basicdailybudget.ui.SummaryScreen
 import uk.nottsknight.basicdailybudget.ui.UpdateScreen
 import uk.nottsknight.basicdailybudget.ui.theme.AppTheme
 
 val Context.preferences: DataStore<Preferences> by preferencesDataStore(name = "bdb_prefs")
+
+private const val PATH_MAIN = "main_screen"
+private const val PATH_NEW_ACCOUNT = "new_account_screen"
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -43,12 +52,17 @@ class MainActivity : ComponentActivity() {
         setContent {
             AppTheme {
                 val snackHostState = remember { SnackbarHostState() }
+                val navController = rememberNavController()
 
                 Scaffold(
                     topBar = { BdbAppBar() }, modifier = Modifier.fillMaxSize(),
                     snackbarHost = { SnackbarHost(hostState = snackHostState) }
                 ) { innerPadding ->
-                    BdbContent(snackHost = snackHostState, innerPadding = innerPadding)
+                    BdbContent(
+                        navController = navController,
+                        snackHost = snackHostState,
+                        innerPadding = innerPadding
+                    )
                 }
             }
         }
@@ -67,25 +81,35 @@ fun BdbAppBar() = TopAppBar(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun BdbContent(snackHost: SnackbarHostState, innerPadding: PaddingValues) {
-    var selectedIndex by remember { mutableIntStateOf(0) }
+fun BdbContent(
+    navController: NavHostController,
+    snackHost: SnackbarHostState,
+    innerPadding: PaddingValues
+) {
 
     Surface(modifier = Modifier.padding(innerPadding)) {
-        Column {
-            PrimaryTabRow(selectedTabIndex = selectedIndex) {
-                Tab(selected = selectedIndex == 0,
-                    onClick = { selectedIndex = 0 },
-                    text = { Text(stringResource(R.string.summaryTabLbl)) })
+        NavHost(navController = navController, graph = navController.createGraph(PATH_MAIN) {
+            composable(PATH_MAIN) {
+                Column {
+                    var selectedIndex by remember { mutableIntStateOf(0) }
+                    PrimaryTabRow(selectedTabIndex = selectedIndex) {
+                        Tab(selected = selectedIndex == 0,
+                            onClick = { selectedIndex = 0 },
+                            text = { Text(stringResource(R.string.summaryTabLbl)) })
 
-                Tab(selected = selectedIndex == 1,
-                    onClick = { selectedIndex = 1 },
-                    text = { Text(stringResource(R.string.incomeTabLbl)) })
+                        Tab(selected = selectedIndex == 1,
+                            onClick = { selectedIndex = 1 },
+                            text = { Text(stringResource(R.string.incomeTabLbl)) })
+                    }
+
+                    when (selectedIndex) {
+                        0 -> SummaryScreen(snackHost) { navController.navigate(PATH_NEW_ACCOUNT) }
+                        1 -> UpdateScreen(snackHost)
+                    }
+                }
             }
 
-            when (selectedIndex) {
-                0 -> SummaryScreen(snackHost)
-                1 -> UpdateScreen(snackHost)
-            }
-        }
+            composable(PATH_NEW_ACCOUNT) { NewAccountScreen { navController.navigate(PATH_MAIN) } }
+        })
     }
 }
