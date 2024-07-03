@@ -7,6 +7,8 @@ import androidx.room.Insert
 import androidx.room.PrimaryKey
 import androidx.room.Query
 import androidx.room.Update
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import java.time.Instant
 
 @Entity
@@ -37,6 +39,8 @@ interface SpendLocalDataStore {
 }
 
 class SpendRepository(private val localData: SpendLocalDataStore) {
-    suspend fun getAllByAccount(accountId: Int) = localData.selectAllByAccountId(accountId)
-    suspend fun insert(spend: Spend) = localData.insert(spend)
+    suspend fun getAllByAccount(accountId: Int) =
+        withContext(Dispatchers.IO) { localData.selectAllByAccountId(accountId) }
+
+    suspend fun insert(spend: Spend) = withContext(Dispatchers.IO) { localData.insert(spend) }
 }

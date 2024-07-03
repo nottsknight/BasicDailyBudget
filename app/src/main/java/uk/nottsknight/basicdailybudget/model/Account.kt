@@ -10,6 +10,8 @@ import androidx.room.Query
 import androidx.room.Relation
 import androidx.room.Transaction
 import androidx.room.Update
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import java.time.Instant
 
 @Entity
@@ -45,8 +47,13 @@ interface AccountLocalDataStore {
 }
 
 class AccountRepository(private val localDataStore: AccountLocalDataStore) {
-    suspend fun select(id: Int) = localDataStore.selectById(id)
-    suspend fun insert(account: Account): Long = localDataStore.insert(account)
-    suspend fun update(account: Account) = localDataStore.update(account)
-    suspend fun delete(account: Account) = localDataStore.delete(account)
+    suspend fun select(id: Int) = withContext(Dispatchers.IO) { localDataStore.selectById(id) }
+    suspend fun insert(account: Account): Long =
+        withContext(Dispatchers.IO) { localDataStore.insert(account) }
+
+    suspend fun update(account: Account) =
+        withContext(Dispatchers.IO) { localDataStore.update(account) }
+
+    suspend fun delete(account: Account) =
+        withContext(Dispatchers.IO) { localDataStore.delete(account) }
 }

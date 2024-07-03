@@ -47,6 +47,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import androidx.room.Room
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
@@ -216,27 +217,34 @@ class SummaryScreenViewModel(
     val currentAccount: StateFlow<Int> get() = currentAccountId
 
     init {
-        viewModelScope.launch {
+        viewModelScope.launch(Dispatchers.IO) {
             prefsRepo.currentAccountId.collect { id ->
                 currentAccountId.value = id
-                getModelValues()
+                updateState()
             }
         }
     }
 
-    private fun getModelValues() = viewModelScope.launch {
+    private suspend fun updateState() {
         val account = accountRepo.select(currentAccountId.value)
-            ?: snackHost.showSnackbar("Failed to get active account").let { return@launch }
+        val transactions = spendRepo.getAllByAccount(currentAccountId.value)
+
+        if (account == null) {
+            snackHost.showSnackbar("Failed to get active account")
+            return
+        }
 
         dailySpendState.value = account.dailyAllowance
         nextPaydayState.value = account.nextPayday
-        transactionList.value = spendRepo.getAllByAccount(currentAccountId.value)
+        transactionList.value = transactions
     }
 
-    fun addTransaction(amount: Int) = viewModelScope.launch {
+    fun addTransaction(amount: Int) {
         val spend = Spend(0, currentAccountId.value, Instant.now(), amount, "")
-        spendRepo.insert(spend)
-        transactionList.value = spendRepo.getAllByAccount(currentAccountId.value)
+        viewModelScope.launch {
+            spendRepo.insert(spend)
+            updateState()
+        }
     }
 
     companion object {

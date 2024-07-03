@@ -1,25 +1,16 @@
 package uk.nottsknight.basicdailybudget.ui
 
 import android.app.Application
-import android.icu.text.DateFormat
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Today
 import androidx.compose.material3.Button
-import androidx.compose.material3.DatePicker
-import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -37,6 +28,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import androidx.room.Room
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import uk.nottsknight.basicdailybudget.R
 import uk.nottsknight.basicdailybudget.model.AccountRepository
@@ -117,7 +109,7 @@ class UpdateScreenViewModel(
 ) : ViewModel() {
 
     init {
-        viewModelScope.launch {
+        viewModelScope.launch(Dispatchers.IO) {
             prefsRepo.currentAccountId.collect {
                 currentAccountId = it
             }
@@ -128,16 +120,23 @@ class UpdateScreenViewModel(
 
     fun updatePayday(date: Long) = viewModelScope.launch {
         val account = accountRepo.select(currentAccountId)
-            ?: snackHost.showSnackbar("Failed to get active account").let { return@launch }
+        if (account == null) {
+            snackHost.showSnackbar("Failed to get active account")
+            return@launch
+        }
+
         val account1 = account.copy(nextPayday = Instant.ofEpochMilli(date))
         accountRepo.update(account1)
     }
 
     fun updateBalance(balance: String) = viewModelScope.launch {
-        val balanceValue = balance.toDouble() * 100
         val account = accountRepo.select(currentAccountId)
-            ?: snackHost.showSnackbar("Failed to get active account").let { return@launch }
+        if (account == null) {
+            snackHost.showSnackbar("Failed to get active account")
+            return@launch
+        }
 
+        val balanceValue = balance.toDouble() * 100
         val daysToPayday = ChronoUnit.DAYS.between(Instant.now(), account.nextPayday)
         val account1 = account.copy(dailyAllowance = (balanceValue / daysToPayday).toInt())
         accountRepo.update(account1)
